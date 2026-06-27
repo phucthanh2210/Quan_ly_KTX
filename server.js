@@ -14,14 +14,15 @@ const db = mysql.createConnection({
   user: process.env.DB_USER,
   password: process.env.DB_PASSWORD,
   database: process.env.DB_NAME,
+  ssl: { rejectUnauthorized: false },
 });
 
 db.connect((err) => {
   if (err) console.error("Lỗi kết nối DB:", err);
-  else console.log("Đã kết nối MySQL tại cổng 3306");
+  else console.log("Đã kết nối thành công tới Database Aiven!");
 });
 
-// Route lấy danh sách sinh viên
+// API Lấy danh sách sinh viên
 app.get("/api/sinhvien", (req, res) => {
   db.query("SELECT * FROM SinhVien", (err, results) => {
     if (err) return res.status(500).json(err);
@@ -29,6 +30,4 @@ app.get("/api/sinhvien", (req, res) => {
   });
 });
 
-app.listen(process.env.PORT, () =>
-  console.log("Server chạy tại http://localhost:3000"),
-);
+app.listen(process.env.PORT || 3000, () => console.log("Server đang chạy..."));
