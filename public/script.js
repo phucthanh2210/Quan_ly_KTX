@@ -211,6 +211,7 @@ async function loadDashboard() {
 // ---------------------------------------------------------------------------
 // PHÒNG KTX
 // ---------------------------------------------------------------------------
+<<<<<<< HEAD
 function renderPhongRows(rows) {
   const tbody = document.querySelector("#tablePhong tbody");
   if (rows.length === 0) {
@@ -242,11 +243,40 @@ async function loadPhong() {
     const rows = await api("GET", "/phong");
     window._phongCache = rows;
     renderPhongRows(rows);
+=======
+async function loadPhong() {
+  try {
+    const rows = await api("GET", "/phong");
+    const tbody = document.querySelector("#tablePhong tbody");
+    if (rows.length === 0) {
+      tbody.innerHTML = `<tr class="empty-row"><td colspan="7">Chưa có phòng nào.</td></tr>`;
+      return;
+    }
+    tbody.innerHTML = rows
+      .map(
+        (r) => `
+      <tr>
+        <td class="mono">${escapeHtml(r.MaPhong)}</td>
+        <td>${escapeHtml(r.TenPhong)}</td>
+        <td><span class="badge badge--neutral">${escapeHtml(r.KhuVuc)}</span></td>
+        <td>${r.SoLuongToiDa}</td>
+        <td>${r.SoLuongHienTai}</td>
+        <td>${formatCurrency(r.GiaPhong)}</td>
+        <td class="cell-actions">
+          <button class="btn--text" data-action="edit-gia" data-ma="${escapeHtml(r.MaPhong)}">Sửa giá</button>
+          <button class="btn--text is-danger" data-action="delete-phong" data-ma="${escapeHtml(r.MaPhong)}">Xóa</button>
+        </td>
+      </tr>
+    `,
+      )
+      .join("");
+>>>>>>> e5bfa817091ae8f8aaf4eaf204c1774eafd041b2
   } catch (err) {
     showToast(err.message, "error");
   }
 }
 
+<<<<<<< HEAD
 let phongSearchDebounce = null;
 document.getElementById("searchPhong").addEventListener("input", (e) => {
   clearTimeout(phongSearchDebounce);
@@ -269,6 +299,8 @@ document.getElementById("searchPhong").addEventListener("input", (e) => {
   }, 300);
 });
 
+=======
+>>>>>>> e5bfa817091ae8f8aaf4eaf204c1774eafd041b2
 document.querySelector("#tablePhong tbody").addEventListener("click", (e) => {
   const btn = e.target.closest("button[data-action]");
   if (!btn) return;
@@ -359,6 +391,7 @@ async function loadRoomOptions() {
           `<option value="${escapeHtml(r.MaPhong)}">${escapeHtml(r.MaPhong)} — ${escapeHtml(r.TenPhong)} (${r.SoLuongHienTai}/${r.SoLuongToiDa})</option>`,
       )
       .join("");
+<<<<<<< HEAD
 
     const filter = document.getElementById("filterSVPhong");
     const currentValue = filter.value;
@@ -371,6 +404,8 @@ async function loadRoomOptions() {
         )
         .join("");
     filter.value = currentValue;
+=======
+>>>>>>> e5bfa817091ae8f8aaf4eaf204c1774eafd041b2
   } catch (err) {
     showToast(err.message, "error");
   }
@@ -408,6 +443,7 @@ async function loadSinhVien() {
     window._svCache = rows;
     renderSVRows(rows);
     loadRoomOptions();
+<<<<<<< HEAD
     loadThongKeKhuVuc();
   } catch (err) {
     showToast(err.message, "error");
@@ -432,6 +468,8 @@ async function loadThongKeKhuVuc() {
     `,
       )
       .join("");
+=======
+>>>>>>> e5bfa817091ae8f8aaf4eaf204c1774eafd041b2
   } catch (err) {
     showToast(err.message, "error");
   }
@@ -514,6 +552,7 @@ document.getElementById("formSuaSV").addEventListener("submit", async (e) => {
 });
 
 let searchDebounce = null;
+<<<<<<< HEAD
 
 async function runStudentSearch() {
   const mode = document.getElementById("searchSVMode").value;
@@ -553,6 +592,17 @@ async function runStudentSearch() {
       renderSVRows(result);
     } else {
       // Search by name fragment (TimSinhVienTheoTen)
+=======
+document.getElementById("searchSV").addEventListener("input", (e) => {
+  clearTimeout(searchDebounce);
+  const term = e.target.value.trim();
+  searchDebounce = setTimeout(async () => {
+    try {
+      if (!term) {
+        loadSinhVien();
+        return;
+      }
+>>>>>>> e5bfa817091ae8f8aaf4eaf204c1774eafd041b2
       const result = await api(
         "GET",
         `/sinhvien/tim-kiem/ten/${encodeURIComponent(term)}`,
@@ -563,6 +613,7 @@ async function runStudentSearch() {
         window._svCache = result;
         renderSVRows(result);
       }
+<<<<<<< HEAD
     }
   } catch (err) {
     // A 404 from "search by ID" with no match is an expected empty state,
@@ -591,6 +642,12 @@ document.getElementById("filterSVPhong").addEventListener("change", () => {
   // picking a room clears whatever was typed so results aren't ambiguous.
   document.getElementById("searchSV").value = "";
   runStudentSearch();
+=======
+    } catch (err) {
+      showToast(err.message, "error");
+    }
+  }, 300);
+>>>>>>> e5bfa817091ae8f8aaf4eaf204c1774eafd041b2
 });
 
 // ---------------------------------------------------------------------------

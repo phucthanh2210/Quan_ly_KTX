@@ -26,12 +26,17 @@ const pool = mysql.createPool({
   ssl: { rejectUnauthorized: false }, // Aiven requires SSL
 });
 
+<<<<<<< HEAD
 // Helper: run a plain SELECT/INSERT/UPDATE/DELETE and return rows
+=======
+// Helper: run a query and return rows
+>>>>>>> e5bfa817091ae8f8aaf4eaf204c1774eafd041b2
 async function query(sql, params = []) {
   const [rows] = await pool.query(sql, params);
   return rows;
 }
 
+<<<<<<< HEAD
 // Helper: run a CALL to a stored procedure and return just the first
 // result set's rows. mysql2 returns CALL results as:
 //   [ [ <rows of 1st result set>, ..., OkPacket ], fields ]
@@ -41,6 +46,8 @@ async function callProcedure(sql, params = []) {
   return result[0]; // rows of the first (and usually only) result set
 }
 
+=======
+>>>>>>> e5bfa817091ae8f8aaf4eaf204c1774eafd041b2
 // Helper: send a friendly error message extracted from a MySQL error
 function dbErrorMessage(err) {
   // SIGNAL SQLSTATE '45000' errors surface as err.sqlMessage
@@ -94,13 +101,18 @@ app.post("/api/phong", async (req, res) => {
     return res.status(400).json({ message: "Thiếu thông tin phòng" });
   }
   try {
+<<<<<<< HEAD
     const rows = await callProcedure("CALL sp_ThemPhongMoi(?, ?, ?, ?, ?)", [
+=======
+    const rows = await query("CALL sp_ThemPhongMoi(?, ?, ?, ?, ?)", [
+>>>>>>> e5bfa817091ae8f8aaf4eaf204c1774eafd041b2
       MaPhong,
       TenPhong,
       SoLuongToiDa,
       GiaPhong,
       KhuVuc,
     ]);
+<<<<<<< HEAD
     const result = rows[0];
     // sp_ThemPhongMoi returns a plain "Mã phòng đã tồn tại!" message on conflict
     // instead of signaling an error, so detect that case and report it as a 400.
@@ -112,6 +124,9 @@ app.post("/api/phong", async (req, res) => {
       return res.status(400).json(result);
     }
     res.json(result);
+=======
+    res.json(rows[0][0]);
+>>>>>>> e5bfa817091ae8f8aaf4eaf204c1774eafd041b2
   } catch (err) {
     res.status(400).json({ message: dbErrorMessage(err) });
   }
@@ -120,6 +135,7 @@ app.post("/api/phong", async (req, res) => {
 // Sửa giá phòng -> dùng sp_SuaGiaPhong
 app.put("/api/phong/:maPhong/gia", async (req, res) => {
   const { GiaPhongMoi } = req.body;
+<<<<<<< HEAD
   if (GiaPhongMoi === undefined || GiaPhongMoi === null || GiaPhongMoi === "") {
     return res.status(400).json({ message: "Thiếu giá phòng mới" });
   }
@@ -137,6 +153,16 @@ app.put("/api/phong/:maPhong/gia", async (req, res) => {
       return res.status(404).json(result);
     }
     res.json(result);
+=======
+  if (GiaPhongMoi === undefined)
+    return res.status(400).json({ message: "Thiếu giá phòng mới" });
+  try {
+    const rows = await query("CALL sp_SuaGiaPhong(?, ?)", [
+      req.params.maPhong,
+      GiaPhongMoi,
+    ]);
+    res.json(rows[0][0]);
+>>>>>>> e5bfa817091ae8f8aaf4eaf204c1774eafd041b2
   } catch (err) {
     res.status(400).json({ message: dbErrorMessage(err) });
   }
@@ -145,15 +171,21 @@ app.put("/api/phong/:maPhong/gia", async (req, res) => {
 // Xóa phòng -> dùng sp_XoaPhongKTX (trigger trg_ChanXoaPhong_CoSinhVien sẽ chặn nếu còn SV)
 app.delete("/api/phong/:maPhong", async (req, res) => {
   try {
+<<<<<<< HEAD
     const rows = await callProcedure("CALL sp_XoaPhongKTX(?)", [
       req.params.maPhong,
     ]);
     res.json(rows[0]);
+=======
+    const rows = await query("CALL sp_XoaPhongKTX(?)", [req.params.maPhong]);
+    res.json(rows[0][0]);
+>>>>>>> e5bfa817091ae8f8aaf4eaf204c1774eafd041b2
   } catch (err) {
     res.status(400).json({ message: dbErrorMessage(err) });
   }
 });
 
+<<<<<<< HEAD
 // Tìm kiếm phòng theo mã hoặc tên phòng (LIKE search, vì SQL gốc không có
 // procedure tìm phòng — chỉ có tìm sinh viên theo phòng)
 app.get("/api/phong/tim-kiem/:tuKhoa", async (req, res) => {
@@ -169,6 +201,8 @@ app.get("/api/phong/tim-kiem/:tuKhoa", async (req, res) => {
   }
 });
 
+=======
+>>>>>>> e5bfa817091ae8f8aaf4eaf204c1774eafd041b2
 // View: Thống kê phòng trống
 app.get("/api/phong/thong-ke/trong", async (req, res) => {
   try {
@@ -192,10 +226,17 @@ app.get("/api/phong/danh-sach-sinh-vien", async (req, res) => {
 // Procedure: Tìm sinh viên theo 1 phòng cụ thể
 app.get("/api/phong/:maPhong/sinh-vien", async (req, res) => {
   try {
+<<<<<<< HEAD
     const rows = await callProcedure("CALL TimSinhVienTheoPhong(?)", [
       req.params.maPhong,
     ]);
     res.json(rows);
+=======
+    const rows = await query("CALL TimSinhVienTheoPhong(?)", [
+      req.params.maPhong,
+    ]);
+    res.json(rows[0]);
+>>>>>>> e5bfa817091ae8f8aaf4eaf204c1774eafd041b2
   } catch (err) {
     res.status(400).json({ message: dbErrorMessage(err) });
   }
@@ -218,11 +259,16 @@ app.get("/api/sinhvien", async (req, res) => {
 // Tìm sinh viên theo mã -> dùng TimSinhVien
 app.get("/api/sinhvien/:maSV", async (req, res) => {
   try {
+<<<<<<< HEAD
     const rows = await callProcedure("CALL TimSinhVien(?)", [req.params.maSV]);
     if (rows.length === 1 && rows[0].ThongBao) {
       return res.status(404).json({ message: rows[0].ThongBao });
     }
     res.json(rows);
+=======
+    const rows = await query("CALL TimSinhVien(?)", [req.params.maSV]);
+    res.json(rows[0]);
+>>>>>>> e5bfa817091ae8f8aaf4eaf204c1774eafd041b2
   } catch (err) {
     res.status(400).json({ message: dbErrorMessage(err) });
   }
@@ -231,10 +277,15 @@ app.get("/api/sinhvien/:maSV", async (req, res) => {
 // Tìm sinh viên theo tên -> dùng TimSinhVienTheoTen
 app.get("/api/sinhvien/tim-kiem/ten/:ten", async (req, res) => {
   try {
+<<<<<<< HEAD
     const rows = await callProcedure("CALL TimSinhVienTheoTen(?)", [
       req.params.ten,
     ]);
     res.json(rows);
+=======
+    const rows = await query("CALL TimSinhVienTheoTen(?)", [req.params.ten]);
+    res.json(rows[0]);
+>>>>>>> e5bfa817091ae8f8aaf4eaf204c1774eafd041b2
   } catch (err) {
     res.status(400).json({ message: dbErrorMessage(err) });
   }
@@ -278,7 +329,11 @@ app.post("/api/sinhvien/full", async (req, res) => {
   }
 
   try {
+<<<<<<< HEAD
     const rows = await callProcedure(
+=======
+    const rows = await query(
+>>>>>>> e5bfa817091ae8f8aaf4eaf204c1774eafd041b2
       "CALL sp_ThemSinhVienVaHopDong(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
       [
         MaSV,
@@ -295,6 +350,7 @@ app.post("/api/sinhvien/full", async (req, res) => {
         SoTien,
       ],
     );
+<<<<<<< HEAD
     const result = rows[0];
     if (
       result &&
@@ -304,6 +360,9 @@ app.post("/api/sinhvien/full", async (req, res) => {
       return res.status(400).json(result);
     }
     res.json(result);
+=======
+    res.json(rows[0][0]);
+>>>>>>> e5bfa817091ae8f8aaf4eaf204c1774eafd041b2
   } catch (err) {
     res.status(400).json({ message: dbErrorMessage(err) });
   }
@@ -316,6 +375,7 @@ app.put("/api/sinhvien/:maSV", async (req, res) => {
     return res.status(400).json({ message: "Thiếu thông tin cần sửa" });
   }
   try {
+<<<<<<< HEAD
     const rows = await callProcedure(
       "CALL sp_SuaThongTinSinhVien(?, ?, ?, ?)",
       [req.params.maSV, HoVaTen, DiaChi, SoDienThoai],
@@ -329,6 +389,15 @@ app.put("/api/sinhvien/:maSV", async (req, res) => {
       return res.status(404).json(result);
     }
     res.json(result);
+=======
+    const rows = await query("CALL sp_SuaThongTinSinhVien(?, ?, ?, ?)", [
+      req.params.maSV,
+      HoVaTen,
+      DiaChi,
+      SoDienThoai,
+    ]);
+    res.json(rows[0][0]);
+>>>>>>> e5bfa817091ae8f8aaf4eaf204c1774eafd041b2
   } catch (err) {
     res.status(400).json({ message: dbErrorMessage(err) });
   }
@@ -337,10 +406,15 @@ app.put("/api/sinhvien/:maSV", async (req, res) => {
 // Xóa sinh viên -> sp_XoaSinhVien (xóa luôn hóa đơn/hợp đồng liên quan, trigger trừ sĩ số phòng)
 app.delete("/api/sinhvien/:maSV", async (req, res) => {
   try {
+<<<<<<< HEAD
     const rows = await callProcedure("CALL sp_XoaSinhVien(?)", [
       req.params.maSV,
     ]);
     res.json(rows[0]);
+=======
+    const rows = await query("CALL sp_XoaSinhVien(?)", [req.params.maSV]);
+    res.json(rows[0][0]);
+>>>>>>> e5bfa817091ae8f8aaf4eaf204c1774eafd041b2
   } catch (err) {
     res.status(400).json({ message: dbErrorMessage(err) });
   }
@@ -380,10 +454,17 @@ app.get("/api/hopdong", async (req, res) => {
 app.get("/api/hopdong/thong-ke", async (req, res) => {
   try {
     const trangThai = req.query.trangThai || null;
+<<<<<<< HEAD
     const rows = await callProcedure("CALL sp_ThongKeHopDongTheoTrangThai(?)", [
       trangThai,
     ]);
     res.json(rows);
+=======
+    const rows = await query("CALL sp_ThongKeHopDongTheoTrangThai(?)", [
+      trangThai,
+    ]);
+    res.json(rows[0]);
+>>>>>>> e5bfa817091ae8f8aaf4eaf204c1774eafd041b2
   } catch (err) {
     res.status(400).json({ message: dbErrorMessage(err) });
   }
@@ -453,6 +534,7 @@ app.put("/api/hoadon/:maHoaDon/trang-thai", async (req, res) => {
       .json({ message: `Trạng thái phải là một trong: ${valid.join(", ")}` });
   }
   try {
+<<<<<<< HEAD
     const rows = await callProcedure("CALL sp_CapNhatTrangThaiHoaDon(?, ?)", [
       req.params.maHoaDon,
       TrangThai,
@@ -466,6 +548,13 @@ app.put("/api/hoadon/:maHoaDon/trang-thai", async (req, res) => {
       return res.status(404).json(result);
     }
     res.json(result);
+=======
+    const rows = await query("CALL sp_CapNhatTrangThaiHoaDon(?, ?)", [
+      req.params.maHoaDon,
+      TrangThai,
+    ]);
+    res.json(rows[0][0]);
+>>>>>>> e5bfa817091ae8f8aaf4eaf204c1774eafd041b2
   } catch (err) {
     res.status(400).json({ message: dbErrorMessage(err) });
   }
