@@ -211,36 +211,63 @@ async function loadDashboard() {
 // ---------------------------------------------------------------------------
 // PHÒNG KTX
 // ---------------------------------------------------------------------------
+function renderPhongRows(rows) {
+  const tbody = document.querySelector("#tablePhong tbody");
+  if (rows.length === 0) {
+    tbody.innerHTML = `<tr class="empty-row"><td colspan="7">Không tìm thấy phòng nào.</td></tr>`;
+    return;
+  }
+  tbody.innerHTML = rows
+    .map(
+      (r) => `
+    <tr>
+      <td class="mono">${escapeHtml(r.MaPhong)}</td>
+      <td>${escapeHtml(r.TenPhong)}</td>
+      <td><span class="badge badge--neutral">${escapeHtml(r.KhuVuc)}</span></td>
+      <td>${r.SoLuongToiDa}</td>
+      <td>${r.SoLuongHienTai}</td>
+      <td>${formatCurrency(r.GiaPhong)}</td>
+      <td class="cell-actions">
+        <button class="btn--text" data-action="edit-gia" data-ma="${escapeHtml(r.MaPhong)}">Sửa giá</button>
+        <button class="btn--text is-danger" data-action="delete-phong" data-ma="${escapeHtml(r.MaPhong)}">Xóa</button>
+      </td>
+    </tr>
+  `,
+    )
+    .join("");
+}
+
 async function loadPhong() {
   try {
     const rows = await api("GET", "/phong");
-    const tbody = document.querySelector("#tablePhong tbody");
-    if (rows.length === 0) {
-      tbody.innerHTML = `<tr class="empty-row"><td colspan="7">Chưa có phòng nào.</td></tr>`;
-      return;
-    }
-    tbody.innerHTML = rows
-      .map(
-        (r) => `
-      <tr>
-        <td class="mono">${escapeHtml(r.MaPhong)}</td>
-        <td>${escapeHtml(r.TenPhong)}</td>
-        <td><span class="badge badge--neutral">${escapeHtml(r.KhuVuc)}</span></td>
-        <td>${r.SoLuongToiDa}</td>
-        <td>${r.SoLuongHienTai}</td>
-        <td>${formatCurrency(r.GiaPhong)}</td>
-        <td class="cell-actions">
-          <button class="btn--text" data-action="edit-gia" data-ma="${escapeHtml(r.MaPhong)}">Sửa giá</button>
-          <button class="btn--text is-danger" data-action="delete-phong" data-ma="${escapeHtml(r.MaPhong)}">Xóa</button>
-        </td>
-      </tr>
-    `,
-      )
-      .join("");
+    window._phongCache = rows;
+    renderPhongRows(rows);
   } catch (err) {
     showToast(err.message, "error");
   }
 }
+
+let phongSearchDebounce = null;
+document.getElementById("searchPhong").addEventListener("input", (e) => {
+  clearTimeout(phongSearchDebounce);
+  const term = e.target.value.trim();
+  phongSearchDebounce = setTimeout(async () => {
+    try {
+      if (!term) {
+        loadPhong();
+        return;
+      }
+      const rows = await api(
+        "GET",
+        `/phong/tim-kiem/${encodeURIComponent(term)}`,
+      );
+      window._phongCache = rows;
+      renderPhongRows(rows);
+    } catch (err) {
+      showToast(err.message, "error");
+    }
+  }, 300);
+});
 
 document.querySelector("#tablePhong tbody").addEventListener("click", (e) => {
   const btn = e.target.closest("button[data-action]");
@@ -332,6 +359,18 @@ async function loadRoomOptions() {
           `<option value="${escapeHtml(r.MaPhong)}">${escapeHtml(r.MaPhong)} — ${escapeHtml(r.TenPhong)} (${r.SoLuongHienTai}/${r.SoLuongToiDa})</option>`,
       )
       .join("");
+
+    const filter = document.getElementById("filterSVPhong");
+    const currentValue = filter.value;
+    filter.innerHTML =
+      `<option value="">Tất cả phòng</option>` +
+      allRooms
+        .map(
+          (r) =>
+            `<option value="${escapeHtml(r.MaPhong)}">${escapeHtml(r.MaPhong)} — ${escapeHtml(r.TenPhong)}</option>`,
+        )
+        .join("");
+    filter.value = currentValue;
   } catch (err) {
     showToast(err.message, "error");
   }
@@ -369,6 +408,30 @@ async function loadSinhVien() {
     window._svCache = rows;
     renderSVRows(rows);
     loadRoomOptions();
+    loadThongKeKhuVuc();
+  } catch (err) {
+    showToast(err.message, "error");
+  }
+}
+
+async function loadThongKeKhuVuc() {
+  try {
+    const rows = await api("GET", "/sinhvien/thong-ke/khu-vuc");
+    const tbody = document.querySelector("#tableThongKeKhuVuc tbody");
+    if (rows.length === 0) {
+      tbody.innerHTML = `<tr class="empty-row"><td colspan="2">Chưa có dữ liệu.</td></tr>`;
+      return;
+    }
+    tbody.innerHTML = rows
+      .map(
+        (r) => `
+      <tr>
+        <td><span class="badge badge--neutral">${escapeHtml(r.KhuVuc)}</span></td>
+        <td class="mono">${r.TongSinhVien}</td>
+      </tr>
+    `,
+      )
+      .join("");
   } catch (err) {
     showToast(err.message, "error");
   }
@@ -451,15 +514,45 @@ document.getElementById("formSuaSV").addEventListener("submit", async (e) => {
 });
 
 let searchDebounce = null;
-document.getElementById("searchSV").addEventListener("input", (e) => {
-  clearTimeout(searchDebounce);
-  const term = e.target.value.trim();
-  searchDebounce = setTimeout(async () => {
+
+async function runStudentSearch() {
+  const mode = document.getElementById("searchSVMode").value;
+  const term = document.getElementById("searchSV").value.trim();
+  const maPhong = document.getElementById("filterSVPhong").value;
+
+  // A room filter takes priority and uses the dedicated
+  // "students in this room" procedure (TimSinhVienTheoPhong).
+  if (maPhong) {
     try {
-      if (!term) {
-        loadSinhVien();
-        return;
+      const result = await api(
+        "GET",
+        `/phong/${encodeURIComponent(maPhong)}/sinh-vien`,
+      );
+      if (result[0] && (result[0].ThongBao || result[0].Message)) {
+        renderSVRows([]);
+      } else {
+        window._svCache = result;
+        renderSVRows(result);
       }
+    } catch (err) {
+      showToast(err.message, "error");
+    }
+    return;
+  }
+
+  if (!term) {
+    loadSinhVien();
+    return;
+  }
+
+  try {
+    if (mode === "ma") {
+      // Search by exact student ID (TimSinhVien)
+      const result = await api("GET", `/sinhvien/${encodeURIComponent(term)}`);
+      window._svCache = result;
+      renderSVRows(result);
+    } else {
+      // Search by name fragment (TimSinhVienTheoTen)
       const result = await api(
         "GET",
         `/sinhvien/tim-kiem/ten/${encodeURIComponent(term)}`,
@@ -470,10 +563,34 @@ document.getElementById("searchSV").addEventListener("input", (e) => {
         window._svCache = result;
         renderSVRows(result);
       }
-    } catch (err) {
+    }
+  } catch (err) {
+    // A 404 from "search by ID" with no match is an expected empty state,
+    // not an error worth a toast.
+    renderSVRows([]);
+    if (!err.message.includes("Không tìm thấy")) {
       showToast(err.message, "error");
     }
-  }, 300);
+  }
+}
+
+document.getElementById("searchSV").addEventListener("input", () => {
+  clearTimeout(searchDebounce);
+  searchDebounce = setTimeout(runStudentSearch, 300);
+});
+
+document.getElementById("searchSVMode").addEventListener("change", () => {
+  const mode = document.getElementById("searchSVMode").value;
+  document.getElementById("searchSV").placeholder =
+    mode === "ma" ? "Nhập mã sinh viên…" : "Tìm theo tên…";
+  runStudentSearch();
+});
+
+document.getElementById("filterSVPhong").addEventListener("change", () => {
+  // A room filter and a text search are mutually exclusive in this UI;
+  // picking a room clears whatever was typed so results aren't ambiguous.
+  document.getElementById("searchSV").value = "";
+  runStudentSearch();
 });
 
 // ---------------------------------------------------------------------------

@@ -1,467 +1,366 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="vi">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Quản Lý KTX</title>
-    <link rel="preconnect" href="https://fonts.googleapis.com" />
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-    <link
-      href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap"
-      rel="stylesheet"
-    />
-    <link rel="stylesheet" href="style.css" />
-  </head>
-  <body>
-    <div class="app">
-      <!-- Sidebar: styled like a dormitory directory board -->
-      <aside class="sidebar">
-        <div class="brand">
-          <span class="brand-mark">KTX</span>
-          <div class="brand-text">
-            <span class="brand-title">Ký Túc Xá</span>
-            <span class="brand-sub">Hệ thống quản lý</span>
-          </div>
-        </div>
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Quản Lý KTX</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
 
-        <nav class="nav">
-          <button class="nav-item is-active" data-view="dashboard">
-            <span class="nav-tag">00</span> Tổng quan
-          </button>
-          <button class="nav-item" data-view="phong">
-            <span class="nav-tag">01</span> Phòng KTX
-          </button>
-          <button class="nav-item" data-view="sinhvien">
-            <span class="nav-tag">02</span> Sinh viên
-          </button>
-          <button class="nav-item" data-view="hopdong">
-            <span class="nav-tag">03</span> Hợp đồng
-          </button>
-          <button class="nav-item" data-view="hoadon">
-            <span class="nav-tag">04</span> Hóa đơn
-          </button>
-        </nav>
+<div class="app">
 
-        <div class="sidebar-foot">
-          <span class="dot" id="dbStatusDot"></span>
-          <span id="dbStatusText">Đang kiểm tra kết nối…</span>
-        </div>
-      </aside>
-
-      <!-- Main content -->
-      <main class="main">
-        <header class="topbar">
-          <h1 id="viewTitle">Tổng quan</h1>
-          <p id="viewSubtitle">
-            Toàn bộ tình hình ký túc xá trong một góc nhìn.
-          </p>
-        </header>
-
-        <div id="toast" class="toast"></div>
-
-        <!-- ============ DASHBOARD VIEW ============ -->
-        <section class="view is-active" id="view-dashboard">
-          <div class="stat-grid">
-            <div class="stat-card">
-              <span class="stat-label">Số phòng</span>
-              <span class="stat-value" id="statPhong">—</span>
-            </div>
-            <div class="stat-card">
-              <span class="stat-label">Sinh viên</span>
-              <span class="stat-value" id="statSV">—</span>
-            </div>
-            <div class="stat-card">
-              <span class="stat-label">Hợp đồng</span>
-              <span class="stat-value" id="statHD">—</span>
-            </div>
-            <div class="stat-card">
-              <span class="stat-label">Phòng còn trống</span>
-              <span class="stat-value" id="statPhongTrong">—</span>
-            </div>
-            <div class="stat-card">
-              <span class="stat-label">Hóa đơn chưa thanh toán</span>
-              <span class="stat-value" id="statHDChuaTT">—</span>
-            </div>
-            <div class="stat-card stat-card--accent">
-              <span class="stat-label">Tổng doanh thu đã thu</span>
-              <span class="stat-value" id="statDoanhThu">—</span>
-            </div>
-          </div>
-
-          <div class="panel">
-            <div class="panel-head">
-              <h2>Phòng còn chỗ trống</h2>
-            </div>
-            <div class="table-wrap">
-              <table id="tablePhongTrong">
-                <thead>
-                  <tr>
-                    <th>Mã phòng</th>
-                    <th>Tên phòng</th>
-                    <th>Tối đa</th>
-                    <th>Hiện tại</th>
-                    <th>Còn trống</th>
-                  </tr>
-                </thead>
-                <tbody></tbody>
-              </table>
-            </div>
-          </div>
-        </section>
-
-        <!-- ============ PHÒNG KTX VIEW ============ -->
-        <section class="view" id="view-phong">
-          <div class="panel">
-            <div class="panel-head">
-              <h2>Danh sách phòng</h2>
-              <button class="btn btn--primary" id="btnNewPhong">
-                + Thêm phòng
-              </button>
-            </div>
-            <div class="table-wrap">
-              <table id="tablePhong">
-                <thead>
-                  <tr>
-                    <th>Mã phòng</th>
-                    <th>Tên phòng</th>
-                    <th>Khu vực</th>
-                    <th>Tối đa</th>
-                    <th>Hiện tại</th>
-                    <th>Giá phòng</th>
-                    <th></th>
-                  </tr>
-                </thead>
-                <tbody></tbody>
-              </table>
-            </div>
-          </div>
-        </section>
-
-        <!-- ============ SINH VIÊN VIEW ============ -->
-        <section class="view" id="view-sinhvien">
-          <div class="panel">
-            <div class="panel-head">
-              <h2>Danh sách sinh viên</h2>
-              <div class="panel-actions">
-                <input
-                  type="search"
-                  id="searchSV"
-                  placeholder="Tìm theo tên…"
-                  class="input input--search"
-                />
-                <button class="btn btn--primary" id="btnNewSV">
-                  + Thêm sinh viên
-                </button>
-              </div>
-            </div>
-            <div class="table-wrap">
-              <table id="tableSV">
-                <thead>
-                  <tr>
-                    <th>Mã SV</th>
-                    <th>Họ và tên</th>
-                    <th>Giới tính</th>
-                    <th>Ngày sinh</th>
-                    <th>SĐT</th>
-                    <th>Phòng</th>
-                    <th></th>
-                  </tr>
-                </thead>
-                <tbody></tbody>
-              </table>
-            </div>
-          </div>
-        </section>
-
-        <!-- ============ HỢP ĐỒNG VIEW ============ -->
-        <section class="view" id="view-hopdong">
-          <div class="panel">
-            <div class="panel-head">
-              <h2>Danh sách hợp đồng</h2>
-            </div>
-            <div class="table-wrap">
-              <table id="tableHopDong">
-                <thead>
-                  <tr>
-                    <th>Mã HĐ</th>
-                    <th>Sinh viên</th>
-                    <th>Phòng</th>
-                    <th>Bắt đầu</th>
-                    <th>Kết thúc</th>
-                    <th>Trạng thái</th>
-                    <th></th>
-                  </tr>
-                </thead>
-                <tbody></tbody>
-              </table>
-            </div>
-          </div>
-        </section>
-
-        <!-- ============ HÓA ĐƠN VIEW ============ -->
-        <section class="view" id="view-hoadon">
-          <div class="panel">
-            <div class="panel-head">
-              <h2>Danh sách hóa đơn</h2>
-            </div>
-            <div class="table-wrap">
-              <table id="tableHoaDon">
-                <thead>
-                  <tr>
-                    <th>Mã hóa đơn</th>
-                    <th>Mã HĐ</th>
-                    <th>Sinh viên</th>
-                    <th>Số tiền</th>
-                    <th>Ngày lập</th>
-                    <th>Trạng thái</th>
-                    <th></th>
-                  </tr>
-                </thead>
-                <tbody></tbody>
-              </table>
-            </div>
-          </div>
-        </section>
-      </main>
+  <!-- Sidebar: styled like a dormitory directory board -->
+  <aside class="sidebar">
+    <div class="brand">
+      <span class="brand-mark">KTX</span>
+      <div class="brand-text">
+        <span class="brand-title">Ký Túc Xá</span>
+        <span class="brand-sub">Hệ thống quản lý</span>
+      </div>
     </div>
 
-    <!-- ============ MODAL: Thêm phòng ============ -->
-    <div class="modal-backdrop" id="modalPhong">
-      <div class="modal">
-        <div class="modal-head">
-          <h3>Thêm phòng mới</h3>
-          <button class="modal-close" data-close>&times;</button>
+    <nav class="nav">
+      <button class="nav-item is-active" data-view="dashboard">
+        <span class="nav-tag">00</span> Tổng quan
+      </button>
+      <button class="nav-item" data-view="phong">
+        <span class="nav-tag">01</span> Phòng KTX
+      </button>
+      <button class="nav-item" data-view="sinhvien">
+        <span class="nav-tag">02</span> Sinh viên
+      </button>
+      <button class="nav-item" data-view="hopdong">
+        <span class="nav-tag">03</span> Hợp đồng
+      </button>
+      <button class="nav-item" data-view="hoadon">
+        <span class="nav-tag">04</span> Hóa đơn
+      </button>
+    </nav>
+
+    <div class="sidebar-foot">
+      <span class="dot" id="dbStatusDot"></span>
+      <span id="dbStatusText">Đang kiểm tra kết nối…</span>
+    </div>
+  </aside>
+
+  <!-- Main content -->
+  <main class="main">
+
+    <header class="topbar">
+      <h1 id="viewTitle">Tổng quan</h1>
+      <p id="viewSubtitle">Toàn bộ tình hình ký túc xá trong một góc nhìn.</p>
+    </header>
+
+    <div id="toast" class="toast"></div>
+
+    <!-- ============ DASHBOARD VIEW ============ -->
+    <section class="view is-active" id="view-dashboard">
+      <div class="stat-grid">
+        <div class="stat-card">
+          <span class="stat-label">Số phòng</span>
+          <span class="stat-value" id="statPhong">—</span>
         </div>
-        <form id="formPhong">
-          <div class="field">
-            <label>Mã phòng</label
-            ><input name="MaPhong" required placeholder="P301" />
+        <div class="stat-card">
+          <span class="stat-label">Sinh viên</span>
+          <span class="stat-value" id="statSV">—</span>
+        </div>
+        <div class="stat-card">
+          <span class="stat-label">Hợp đồng</span>
+          <span class="stat-value" id="statHD">—</span>
+        </div>
+        <div class="stat-card">
+          <span class="stat-label">Phòng còn trống</span>
+          <span class="stat-value" id="statPhongTrong">—</span>
+        </div>
+        <div class="stat-card">
+          <span class="stat-label">Hóa đơn chưa thanh toán</span>
+          <span class="stat-value" id="statHDChuaTT">—</span>
+        </div>
+        <div class="stat-card stat-card--accent">
+          <span class="stat-label">Tổng doanh thu đã thu</span>
+          <span class="stat-value" id="statDoanhThu">—</span>
+        </div>
+      </div>
+
+      <div class="panel">
+        <div class="panel-head">
+          <h2>Phòng còn chỗ trống</h2>
+        </div>
+        <div class="table-wrap">
+          <table id="tablePhongTrong">
+            <thead>
+              <tr><th>Mã phòng</th><th>Tên phòng</th><th>Tối đa</th><th>Hiện tại</th><th>Còn trống</th></tr>
+            </thead>
+            <tbody></tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============ PHÒNG KTX VIEW ============ -->
+    <section class="view" id="view-phong">
+      <div class="panel">
+        <div class="panel-head">
+          <h2>Danh sách phòng</h2>
+          <div class="panel-actions">
+            <input type="search" id="searchPhong" placeholder="Tìm theo mã hoặc tên phòng…" class="input input--search">
+            <button class="btn btn--primary" id="btnNewPhong">+ Thêm phòng</button>
           </div>
-          <div class="field">
-            <label>Tên phòng</label
-            ><input name="TenPhong" required placeholder="Phòng 301 - Khu C" />
+        </div>
+        <div class="table-wrap">
+          <table id="tablePhong">
+            <thead>
+              <tr>
+                <th>Mã phòng</th><th>Tên phòng</th><th>Khu vực</th>
+                <th>Tối đa</th><th>Hiện tại</th><th>Giá phòng</th><th></th>
+              </tr>
+            </thead>
+            <tbody></tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============ SINH VIÊN VIEW ============ -->
+    <section class="view" id="view-sinhvien">
+      <div class="panel">
+        <div class="panel-head">
+          <h2>Danh sách sinh viên</h2>
+          <div class="panel-actions">
+            <select id="searchSVMode" class="input" style="width:auto;">
+              <option value="ten">Tìm theo tên</option>
+              <option value="ma">Tìm theo mã SV</option>
+            </select>
+            <input type="search" id="searchSV" placeholder="Tìm theo tên…" class="input input--search">
+            <select id="filterSVPhong" class="input" style="width:auto;">
+              <option value="">Tất cả phòng</option>
+            </select>
+            <button class="btn btn--primary" id="btnNewSV">+ Thêm sinh viên</button>
           </div>
-          <div class="field-row">
-            <div class="field">
-              <label>Sức chứa tối đa</label
-              ><input
-                type="number"
-                name="SoLuongToiDa"
-                min="1"
-                max="10"
-                required
-              />
-            </div>
-            <div class="field">
-              <label>Giá phòng (VNĐ)</label
-              ><input
-                type="number"
-                name="GiaPhong"
-                min="1"
-                step="1000"
-                required
-              />
-            </div>
-          </div>
+        </div>
+        <div class="table-wrap">
+          <table id="tableSV">
+            <thead>
+              <tr>
+                <th>Mã SV</th><th>Họ và tên</th><th>Giới tính</th><th>Ngày sinh</th>
+                <th>SĐT</th><th>Phòng</th><th></th>
+              </tr>
+            </thead>
+            <tbody></tbody>
+          </table>
+        </div>
+      </div>
+
+      <div class="panel">
+        <div class="panel-head">
+          <h2>Thống kê sinh viên theo khu vực</h2>
+        </div>
+        <div class="table-wrap">
+          <table id="tableThongKeKhuVuc">
+            <thead>
+              <tr><th>Khu vực</th><th>Tổng số sinh viên</th></tr>
+            </thead>
+            <tbody></tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============ HỢP ĐỒNG VIEW ============ -->
+    <section class="view" id="view-hopdong">
+      <div class="panel">
+        <div class="panel-head">
+          <h2>Danh sách hợp đồng</h2>
+        </div>
+        <div class="table-wrap">
+          <table id="tableHopDong">
+            <thead>
+              <tr>
+                <th>Mã HĐ</th><th>Sinh viên</th><th>Phòng</th>
+                <th>Bắt đầu</th><th>Kết thúc</th><th>Trạng thái</th><th></th>
+              </tr>
+            </thead>
+            <tbody></tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============ HÓA ĐƠN VIEW ============ -->
+    <section class="view" id="view-hoadon">
+      <div class="panel">
+        <div class="panel-head">
+          <h2>Danh sách hóa đơn</h2>
+        </div>
+        <div class="table-wrap">
+          <table id="tableHoaDon">
+            <thead>
+              <tr>
+                <th>Mã hóa đơn</th><th>Mã HĐ</th><th>Sinh viên</th>
+                <th>Số tiền</th><th>Ngày lập</th><th>Trạng thái</th><th></th>
+              </tr>
+            </thead>
+            <tbody></tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+  </main>
+</div>
+
+<!-- ============ MODAL: Thêm phòng ============ -->
+<div class="modal-backdrop" id="modalPhong">
+  <div class="modal">
+    <div class="modal-head">
+      <h3>Thêm phòng mới</h3>
+      <button class="modal-close" data-close>&times;</button>
+    </div>
+    <form id="formPhong">
+      <div class="field"><label>Mã phòng</label><input name="MaPhong" required placeholder="P301"></div>
+      <div class="field"><label>Tên phòng</label><input name="TenPhong" required placeholder="Phòng 301 - Khu C"></div>
+      <div class="field-row">
+        <div class="field"><label>Sức chứa tối đa</label><input type="number" name="SoLuongToiDa" min="1" max="10" required></div>
+        <div class="field"><label>Giá phòng (VNĐ)</label><input type="number" name="GiaPhong" min="1" step="1000" required></div>
+      </div>
+      <div class="field">
+        <label>Khu vực</label>
+        <select name="KhuVuc" required>
+          <option value="Nam">Nam</option>
+          <option value="Nữ">Nữ</option>
+        </select>
+      </div>
+      <p class="field-hint">Quy định: sức chứa tối đa không vượt quá 10 người/phòng.</p>
+      <div class="modal-actions">
+        <button type="button" class="btn btn--ghost" data-close>Hủy</button>
+        <button type="submit" class="btn btn--primary">Thêm phòng</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- ============ MODAL: Sửa giá phòng ============ -->
+<div class="modal-backdrop" id="modalGiaPhong">
+  <div class="modal">
+    <div class="modal-head">
+      <h3>Sửa giá phòng</h3>
+      <button class="modal-close" data-close>&times;</button>
+    </div>
+    <form id="formGiaPhong">
+      <input type="hidden" name="MaPhong">
+      <div class="field"><label>Mã phòng</label><input class="readonly-display" disabled></div>
+      <div class="field"><label>Giá phòng mới (VNĐ)</label><input type="number" name="GiaPhongMoi" min="1" step="1000" required></div>
+      <div class="modal-actions">
+        <button type="button" class="btn btn--ghost" data-close>Hủy</button>
+        <button type="submit" class="btn btn--primary">Cập nhật</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- ============ MODAL: Thêm sinh viên (kèm hợp đồng + hóa đơn) ============ -->
+<div class="modal-backdrop" id="modalSV">
+  <div class="modal modal--wide">
+    <div class="modal-head">
+      <h3>Thêm sinh viên mới</h3>
+      <button class="modal-close" data-close>&times;</button>
+    </div>
+    <form id="formSV">
+      <p class="field-hint">Thêm sinh viên sẽ tự động tạo hợp đồng và hóa đơn đầu tiên tương ứng.</p>
+
+      <div class="form-section">
+        <span class="form-section-tag">Thông tin sinh viên</span>
+        <div class="field-row">
+          <div class="field"><label>Mã sinh viên</label><input name="MaSV" required placeholder="SV010"></div>
+          <div class="field"><label>Họ và tên</label><input name="HoTen" required placeholder="Nguyễn Văn A"></div>
+        </div>
+        <div class="field-row">
+          <div class="field"><label>Ngày sinh</label><input type="date" name="NgaySinh" required></div>
           <div class="field">
-            <label>Khu vực</label>
-            <select name="KhuVuc" required>
+            <label>Giới tính</label>
+            <select name="GioiTinh" required>
               <option value="Nam">Nam</option>
               <option value="Nữ">Nữ</option>
             </select>
           </div>
-          <p class="field-hint">
-            Quy định: sức chứa tối đa không vượt quá 10 người/phòng.
-          </p>
-          <div class="modal-actions">
-            <button type="button" class="btn btn--ghost" data-close>Hủy</button>
-            <button type="submit" class="btn btn--primary">Thêm phòng</button>
-          </div>
-        </form>
-      </div>
-    </div>
-
-    <!-- ============ MODAL: Sửa giá phòng ============ -->
-    <div class="modal-backdrop" id="modalGiaPhong">
-      <div class="modal">
-        <div class="modal-head">
-          <h3>Sửa giá phòng</h3>
-          <button class="modal-close" data-close>&times;</button>
         </div>
-        <form id="formGiaPhong">
-          <input type="hidden" name="MaPhong" />
-          <div class="field">
-            <label>Mã phòng</label><input class="readonly-display" disabled />
-          </div>
-          <div class="field">
-            <label>Giá phòng mới (VNĐ)</label
-            ><input
-              type="number"
-              name="GiaPhongMoi"
-              min="1"
-              step="1000"
-              required
-            />
-          </div>
-          <div class="modal-actions">
-            <button type="button" class="btn btn--ghost" data-close>Hủy</button>
-            <button type="submit" class="btn btn--primary">Cập nhật</button>
-          </div>
-        </form>
-      </div>
-    </div>
-
-    <!-- ============ MODAL: Thêm sinh viên (kèm hợp đồng + hóa đơn) ============ -->
-    <div class="modal-backdrop" id="modalSV">
-      <div class="modal modal--wide">
-        <div class="modal-head">
-          <h3>Thêm sinh viên mới</h3>
-          <button class="modal-close" data-close>&times;</button>
-        </div>
-        <form id="formSV">
-          <p class="field-hint">
-            Thêm sinh viên sẽ tự động tạo hợp đồng và hóa đơn đầu tiên tương
-            ứng.
-          </p>
-
-          <div class="form-section">
-            <span class="form-section-tag">Thông tin sinh viên</span>
-            <div class="field-row">
-              <div class="field">
-                <label>Mã sinh viên</label
-                ><input name="MaSV" required placeholder="SV010" />
-              </div>
-              <div class="field">
-                <label>Họ và tên</label
-                ><input name="HoTen" required placeholder="Nguyễn Văn A" />
-              </div>
-            </div>
-            <div class="field-row">
-              <div class="field">
-                <label>Ngày sinh</label
-                ><input type="date" name="NgaySinh" required />
-              </div>
-              <div class="field">
-                <label>Giới tính</label>
-                <select name="GioiTinh" required>
-                  <option value="Nam">Nam</option>
-                  <option value="Nữ">Nữ</option>
-                </select>
-              </div>
-            </div>
-            <div class="field-row">
-              <div class="field">
-                <label>Địa chỉ</label
-                ><input name="DiaChi" required placeholder="Hà Nội" />
-              </div>
-              <div class="field">
-                <label>Số điện thoại</label
-                ><input name="SDT" required placeholder="09xxxxxxxx" />
-              </div>
-            </div>
-          </div>
-
-          <div class="form-section">
-            <span class="form-section-tag">Hợp đồng</span>
-            <div class="field-row">
-              <div class="field">
-                <label>Phòng</label>
-                <select name="MaPhong" id="selectMaPhongSV" required></select>
-              </div>
-              <div class="field">
-                <label>Mã hợp đồng</label
-                ><input name="MaHD" required placeholder="HD010" />
-              </div>
-            </div>
-            <div class="field-row">
-              <div class="field">
-                <label>Ngày bắt đầu</label
-                ><input type="date" name="NgayBD" required />
-              </div>
-              <div class="field">
-                <label>Ngày kết thúc</label
-                ><input type="date" name="NgayKT" required />
-              </div>
-            </div>
-          </div>
-
-          <div class="form-section">
-            <span class="form-section-tag">Hóa đơn đầu tiên</span>
-            <div class="field-row">
-              <div class="field">
-                <label>Mã hóa đơn</label
-                ><input name="MaHoaDon" required placeholder="HDON010" />
-              </div>
-              <div class="field">
-                <label>Số tiền (VNĐ)</label
-                ><input
-                  type="number"
-                  name="SoTien"
-                  min="1"
-                  step="1000"
-                  required
-                />
-              </div>
-            </div>
-          </div>
-
-          <div class="modal-actions">
-            <button type="button" class="btn btn--ghost" data-close>Hủy</button>
-            <button type="submit" class="btn btn--primary">
-              Thêm sinh viên
-            </button>
-          </div>
-        </form>
-      </div>
-    </div>
-
-    <!-- ============ MODAL: Sửa sinh viên ============ -->
-    <div class="modal-backdrop" id="modalSuaSV">
-      <div class="modal">
-        <div class="modal-head">
-          <h3>Sửa thông tin sinh viên</h3>
-          <button class="modal-close" data-close>&times;</button>
-        </div>
-        <form id="formSuaSV">
-          <input type="hidden" name="MaSV" />
-          <div class="field">
-            <label>Mã sinh viên</label
-            ><input class="readonly-display" disabled />
-          </div>
-          <div class="field">
-            <label>Họ và tên</label><input name="HoVaTen" required />
-          </div>
-          <div class="field">
-            <label>Địa chỉ</label><input name="DiaChi" required />
-          </div>
-          <div class="field">
-            <label>Số điện thoại</label><input name="SoDienThoai" required />
-          </div>
-          <div class="modal-actions">
-            <button type="button" class="btn btn--ghost" data-close>Hủy</button>
-            <button type="submit" class="btn btn--primary">Lưu thay đổi</button>
-          </div>
-        </form>
-      </div>
-    </div>
-
-    <!-- ============ MODAL: Xác nhận xóa (dùng chung) ============ -->
-    <div class="modal-backdrop" id="modalConfirm">
-      <div class="modal modal--small">
-        <div class="modal-head">
-          <h3 id="confirmTitle">Xác nhận</h3>
-          <button class="modal-close" data-close>&times;</button>
-        </div>
-        <p id="confirmMessage" class="confirm-message"></p>
-        <div class="modal-actions">
-          <button type="button" class="btn btn--ghost" data-close>Hủy</button>
-          <button type="button" class="btn btn--danger" id="btnConfirmAction">
-            Xóa
-          </button>
+        <div class="field-row">
+          <div class="field"><label>Địa chỉ</label><input name="DiaChi" required placeholder="Hà Nội"></div>
+          <div class="field"><label>Số điện thoại</label><input name="SDT" required placeholder="09xxxxxxxx"></div>
         </div>
       </div>
-    </div>
 
-    <script src="script.js"></script>
-  </body>
+      <div class="form-section">
+        <span class="form-section-tag">Hợp đồng</span>
+        <div class="field-row">
+          <div class="field">
+            <label>Phòng</label>
+            <select name="MaPhong" id="selectMaPhongSV" required></select>
+          </div>
+          <div class="field"><label>Mã hợp đồng</label><input name="MaHD" required placeholder="HD010"></div>
+        </div>
+        <div class="field-row">
+          <div class="field"><label>Ngày bắt đầu</label><input type="date" name="NgayBD" required></div>
+          <div class="field"><label>Ngày kết thúc</label><input type="date" name="NgayKT" required></div>
+        </div>
+      </div>
+
+      <div class="form-section">
+        <span class="form-section-tag">Hóa đơn đầu tiên</span>
+        <div class="field-row">
+          <div class="field"><label>Mã hóa đơn</label><input name="MaHoaDon" required placeholder="HDON010"></div>
+          <div class="field"><label>Số tiền (VNĐ)</label><input type="number" name="SoTien" min="1" step="1000" required></div>
+        </div>
+      </div>
+
+      <div class="modal-actions">
+        <button type="button" class="btn btn--ghost" data-close>Hủy</button>
+        <button type="submit" class="btn btn--primary">Thêm sinh viên</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- ============ MODAL: Sửa sinh viên ============ -->
+<div class="modal-backdrop" id="modalSuaSV">
+  <div class="modal">
+    <div class="modal-head">
+      <h3>Sửa thông tin sinh viên</h3>
+      <button class="modal-close" data-close>&times;</button>
+    </div>
+    <form id="formSuaSV">
+      <input type="hidden" name="MaSV">
+      <div class="field"><label>Mã sinh viên</label><input class="readonly-display" disabled></div>
+      <div class="field"><label>Họ và tên</label><input name="HoVaTen" required></div>
+      <div class="field"><label>Địa chỉ</label><input name="DiaChi" required></div>
+      <div class="field"><label>Số điện thoại</label><input name="SoDienThoai" required></div>
+      <div class="modal-actions">
+        <button type="button" class="btn btn--ghost" data-close>Hủy</button>
+        <button type="submit" class="btn btn--primary">Lưu thay đổi</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- ============ MODAL: Xác nhận xóa (dùng chung) ============ -->
+<div class="modal-backdrop" id="modalConfirm">
+  <div class="modal modal--small">
+    <div class="modal-head">
+      <h3 id="confirmTitle">Xác nhận</h3>
+      <button class="modal-close" data-close>&times;</button>
+    </div>
+    <p id="confirmMessage" class="confirm-message"></p>
+    <div class="modal-actions">
+      <button type="button" class="btn btn--ghost" data-close>Hủy</button>
+      <button type="button" class="btn btn--danger" id="btnConfirmAction">Xóa</button>
+    </div>
+  </div>
+</div>
+
+<script src="script.js"></script>
+</body>
 </html>

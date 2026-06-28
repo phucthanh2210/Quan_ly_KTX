@@ -26,10 +26,19 @@ const pool = mysql.createPool({
   ssl: { rejectUnauthorized: false }, // Aiven requires SSL
 });
 
-// Helper: run a query and return rows
+// Helper: run a plain SELECT/INSERT/UPDATE/DELETE and return rows
 async function query(sql, params = []) {
   const [rows] = await pool.query(sql, params);
   return rows;
+}
+
+// Helper: run a CALL to a stored procedure and return just the first
+// result set's rows. mysql2 returns CALL results as:
+//   [ [ <rows of 1st result set>, ..., OkPacket ], fields ]
+// so this needs one extra unwrap compared to a plain query.
+async function callProcedure(sql, params = []) {
+  const [result] = await pool.query(sql, params);
+  return result[0]; // rows of the first (and usually only) result set
 }
 
 // Helper: send a friendly error message extracted from a MySQL error
@@ -85,14 +94,24 @@ app.post("/api/phong", async (req, res) => {
     return res.status(400).json({ message: "Thiếu thông tin phòng" });
   }
   try {
-    const rows = await query("CALL sp_ThemPhongMoi(?, ?, ?, ?, ?)", [
+    const rows = await callProcedure("CALL sp_ThemPhongMoi(?, ?, ?, ?, ?)", [
       MaPhong,
       TenPhong,
       SoLuongToiDa,
       GiaPhong,
       KhuVuc,
     ]);
-    res.json(rows[0][0]);
+    const result = rows[0];
+    // sp_ThemPhongMoi returns a plain "Mã phòng đã tồn tại!" message on conflict
+    // instead of signaling an error, so detect that case and report it as a 400.
+    if (
+      result &&
+      typeof result.Message === "string" &&
+      result.Message.includes("đã tồn tại")
+    ) {
+      return res.status(400).json(result);
+    }
+    res.json(result);
   } catch (err) {
     res.status(400).json({ message: dbErrorMessage(err) });
   }
@@ -101,14 +120,23 @@ app.post("/api/phong", async (req, res) => {
 // Sửa giá phòng -> dùng sp_SuaGiaPhong
 app.put("/api/phong/:maPhong/gia", async (req, res) => {
   const { GiaPhongMoi } = req.body;
-  if (GiaPhongMoi === undefined)
+  if (GiaPhongMoi === undefined || GiaPhongMoi === null || GiaPhongMoi === "") {
     return res.status(400).json({ message: "Thiếu giá phòng mới" });
+  }
   try {
-    const rows = await query("CALL sp_SuaGiaPhong(?, ?)", [
+    const rows = await callProcedure("CALL sp_SuaGiaPhong(?, ?)", [
       req.params.maPhong,
       GiaPhongMoi,
     ]);
-    res.json(rows[0][0]);
+    const result = rows[0];
+    if (
+      result &&
+      typeof result.Message === "string" &&
+      result.Message.includes("Không tìm thấy")
+    ) {
+      return res.status(404).json(result);
+    }
+    res.json(result);
   } catch (err) {
     res.status(400).json({ message: dbErrorMessage(err) });
   }
@@ -117,10 +145,27 @@ app.put("/api/phong/:maPhong/gia", async (req, res) => {
 // Xóa phòng -> dùng sp_XoaPhongKTX (trigger trg_ChanXoaPhong_CoSinhVien sẽ chặn nếu còn SV)
 app.delete("/api/phong/:maPhong", async (req, res) => {
   try {
-    const rows = await query("CALL sp_XoaPhongKTX(?)", [req.params.maPhong]);
-    res.json(rows[0][0]);
+    const rows = await callProcedure("CALL sp_XoaPhongKTX(?)", [
+      req.params.maPhong,
+    ]);
+    res.json(rows[0]);
   } catch (err) {
     res.status(400).json({ message: dbErrorMessage(err) });
+  }
+});
+
+// Tìm kiếm phòng theo mã hoặc tên phòng (LIKE search, vì SQL gốc không có
+// procedure tìm phòng — chỉ có tìm sinh viên theo phòng)
+app.get("/api/phong/tim-kiem/:tuKhoa", async (req, res) => {
+  try {
+    const tuKhoa = `%${req.params.tuKhoa}%`;
+    const rows = await query(
+      "SELECT * FROM PhongKTX WHERE MaPhong LIKE ? OR TenPhong LIKE ? ORDER BY MaPhong",
+      [tuKhoa, tuKhoa],
+    );
+    res.json(rows);
+  } catch (err) {
+    res.status(500).json({ message: dbErrorMessage(err) });
   }
 });
 
@@ -147,10 +192,10 @@ app.get("/api/phong/danh-sach-sinh-vien", async (req, res) => {
 // Procedure: Tìm sinh viên theo 1 phòng cụ thể
 app.get("/api/phong/:maPhong/sinh-vien", async (req, res) => {
   try {
-    const rows = await query("CALL TimSinhVienTheoPhong(?)", [
+    const rows = await callProcedure("CALL TimSinhVienTheoPhong(?)", [
       req.params.maPhong,
     ]);
-    res.json(rows[0]);
+    res.json(rows);
   } catch (err) {
     res.status(400).json({ message: dbErrorMessage(err) });
   }
@@ -173,8 +218,11 @@ app.get("/api/sinhvien", async (req, res) => {
 // Tìm sinh viên theo mã -> dùng TimSinhVien
 app.get("/api/sinhvien/:maSV", async (req, res) => {
   try {
-    const rows = await query("CALL TimSinhVien(?)", [req.params.maSV]);
-    res.json(rows[0]);
+    const rows = await callProcedure("CALL TimSinhVien(?)", [req.params.maSV]);
+    if (rows.length === 1 && rows[0].ThongBao) {
+      return res.status(404).json({ message: rows[0].ThongBao });
+    }
+    res.json(rows);
   } catch (err) {
     res.status(400).json({ message: dbErrorMessage(err) });
   }
@@ -183,8 +231,10 @@ app.get("/api/sinhvien/:maSV", async (req, res) => {
 // Tìm sinh viên theo tên -> dùng TimSinhVienTheoTen
 app.get("/api/sinhvien/tim-kiem/ten/:ten", async (req, res) => {
   try {
-    const rows = await query("CALL TimSinhVienTheoTen(?)", [req.params.ten]);
-    res.json(rows[0]);
+    const rows = await callProcedure("CALL TimSinhVienTheoTen(?)", [
+      req.params.ten,
+    ]);
+    res.json(rows);
   } catch (err) {
     res.status(400).json({ message: dbErrorMessage(err) });
   }
@@ -228,7 +278,7 @@ app.post("/api/sinhvien/full", async (req, res) => {
   }
 
   try {
-    const rows = await query(
+    const rows = await callProcedure(
       "CALL sp_ThemSinhVienVaHopDong(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
       [
         MaSV,
@@ -245,7 +295,15 @@ app.post("/api/sinhvien/full", async (req, res) => {
         SoTien,
       ],
     );
-    res.json(rows[0][0]);
+    const result = rows[0];
+    if (
+      result &&
+      typeof result.Message === "string" &&
+      result.Message.includes("thất bại")
+    ) {
+      return res.status(400).json(result);
+    }
+    res.json(result);
   } catch (err) {
     res.status(400).json({ message: dbErrorMessage(err) });
   }
@@ -258,13 +316,19 @@ app.put("/api/sinhvien/:maSV", async (req, res) => {
     return res.status(400).json({ message: "Thiếu thông tin cần sửa" });
   }
   try {
-    const rows = await query("CALL sp_SuaThongTinSinhVien(?, ?, ?, ?)", [
-      req.params.maSV,
-      HoVaTen,
-      DiaChi,
-      SoDienThoai,
-    ]);
-    res.json(rows[0][0]);
+    const rows = await callProcedure(
+      "CALL sp_SuaThongTinSinhVien(?, ?, ?, ?)",
+      [req.params.maSV, HoVaTen, DiaChi, SoDienThoai],
+    );
+    const result = rows[0];
+    if (
+      result &&
+      typeof result.Message === "string" &&
+      result.Message.includes("Không tìm thấy")
+    ) {
+      return res.status(404).json(result);
+    }
+    res.json(result);
   } catch (err) {
     res.status(400).json({ message: dbErrorMessage(err) });
   }
@@ -273,8 +337,10 @@ app.put("/api/sinhvien/:maSV", async (req, res) => {
 // Xóa sinh viên -> sp_XoaSinhVien (xóa luôn hóa đơn/hợp đồng liên quan, trigger trừ sĩ số phòng)
 app.delete("/api/sinhvien/:maSV", async (req, res) => {
   try {
-    const rows = await query("CALL sp_XoaSinhVien(?)", [req.params.maSV]);
-    res.json(rows[0][0]);
+    const rows = await callProcedure("CALL sp_XoaSinhVien(?)", [
+      req.params.maSV,
+    ]);
+    res.json(rows[0]);
   } catch (err) {
     res.status(400).json({ message: dbErrorMessage(err) });
   }
@@ -314,10 +380,10 @@ app.get("/api/hopdong", async (req, res) => {
 app.get("/api/hopdong/thong-ke", async (req, res) => {
   try {
     const trangThai = req.query.trangThai || null;
-    const rows = await query("CALL sp_ThongKeHopDongTheoTrangThai(?)", [
+    const rows = await callProcedure("CALL sp_ThongKeHopDongTheoTrangThai(?)", [
       trangThai,
     ]);
-    res.json(rows[0]);
+    res.json(rows);
   } catch (err) {
     res.status(400).json({ message: dbErrorMessage(err) });
   }
@@ -387,11 +453,19 @@ app.put("/api/hoadon/:maHoaDon/trang-thai", async (req, res) => {
       .json({ message: `Trạng thái phải là một trong: ${valid.join(", ")}` });
   }
   try {
-    const rows = await query("CALL sp_CapNhatTrangThaiHoaDon(?, ?)", [
+    const rows = await callProcedure("CALL sp_CapNhatTrangThaiHoaDon(?, ?)", [
       req.params.maHoaDon,
       TrangThai,
     ]);
-    res.json(rows[0][0]);
+    const result = rows[0];
+    if (
+      result &&
+      typeof result.Message === "string" &&
+      result.Message.includes("Không tìm thấy")
+    ) {
+      return res.status(404).json(result);
+    }
+    res.json(result);
   } catch (err) {
     res.status(400).json({ message: dbErrorMessage(err) });
   }
